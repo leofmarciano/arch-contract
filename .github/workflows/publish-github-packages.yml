@@ -1,0 +1,39 @@
+name: Publish to GitHub Packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@leofmarciano'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm -r build
+
+      # GitHub Packages requires the package name to be scoped to the owner.
+      - name: Scope package name for GitHub Packages
+        working-directory: packages/arch-contract
+        run: npm pkg set name="@leofmarciano/arch-contract"
+
+      - name: Publish to GitHub Packages
+        working-directory: packages/arch-contract
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
