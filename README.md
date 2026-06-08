@@ -92,6 +92,40 @@ expectations:
 
 Exit codes: `0` ok · `1` violations / runtime error · `2` config error.
 
+## Presets
+
+Don't want to write rules from scratch? Activate a built-in **architecture preset** — a strict, senior-grade rule bundle for a given architecture or framework:
+
+```yaml
+# arch-contract.yaml
+version: 1
+project: { name: my-service }
+presets: [clean-architecture]   # your config is merged ON TOP — you always win
+```
+
+```bash
+arch-contract presets                       # list all presets
+arch-contract presets nestjs-clean          # show one preset's layers + rules
+arch-contract init --preset hexagonal       # scaffold a config that uses it
+```
+
+| Preset | Based on | For |
+| --- | --- | --- |
+| `clean-architecture` | Clean Architecture | The canonical 4-layer, inward-only dependency rule |
+| `hexagonal` | Ports & Adapters | Domain core + ports + primary/secondary adapters |
+| `node-service` | Clean Architecture | Generic Node/TS service with optional module slices |
+| `nestjs-clean` | Clean Architecture | Clean Architecture inside NestJS feature modules |
+| `nest-js` | NestJS official | Idiomatic `nest g resource` by-feature layout |
+| `nextjs` | Next.js + Clean Arch | App Router presentation + clean `src/` core |
+| `tanstack-starter` | TanStack Start + Clean Arch | Routes/server-fns over a clean core |
+| `adonisjs` | AdonisJS 6 official | Convention MVC (controllers/models/services/…) |
+| `elysiajs` | Clean Architecture | Elysia controllers over a clean core |
+| `encore-ts` | Encore.ts official | Service-per-directory, cross-service via clients |
+
+> **Rule of thumb:** opinionated frameworks (NestJS, AdonisJS, Encore.ts) follow the framework's own conventions; unopinionated ones (Elysia, TanStack, Next.js) get Clean Architecture for the business core.
+
+Presets are merged **under** your config: layers/rules/expectations you declare with the same `name` override the preset's; your `ruleset` entries replace the preset's per layer. Per-preset docs: **[docs/presets/](./docs/presets/)**.
+
 ## Documentation
 
 Full configuration reference, the complete `to:` vocabulary and the programmatic API live in the package README: **[packages/arch-contract/README.md](./packages/arch-contract/README.md)**.
@@ -119,7 +153,8 @@ jobs:
 
 ### Roadmap
 
-- Presets (`clean-architecture`, `hexagonal`, `node-service`, `nestjs-clean`, …)
+- ~~Presets~~ ✅ (10 built-in — see [Presets](#presets))
+- External preset packages (`arch-contract-preset-*`)
 - `graph --format mermaid|graphviz` views and a richer `explain`
 - SARIF / JUnit reporters
 - Plugin API for custom rules

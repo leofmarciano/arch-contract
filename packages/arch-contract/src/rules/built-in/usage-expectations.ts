@@ -57,7 +57,10 @@ export function evalUsageClause(
       case 'notDependOnPackages': {
         for (const imp of facts.imports) {
           if (matchesForbiddenPackage(imp, clause.values)) {
-            const pkg = imp.packageName ?? imp.specifier;
+            // Report the exact specifier written in source (e.g. `encore.dev/api`);
+            // it is the most precise/actionable target and survives node_modules
+            // resolution that would otherwise drop `packageName`.
+            const pkg = imp.specifier;
             out.push(
               createViolation({
                 rule: exp.name,

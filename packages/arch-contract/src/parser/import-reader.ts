@@ -26,8 +26,12 @@ function buildRecord(
   line: number,
   column: number,
 ): ImportRecord {
-  const targetFile = targetSf ? toPosix(targetSf.getFilePath()) : null;
-  const isExternalPackage = targetFile === null && !isRelative(specifier);
+  // A bare specifier may resolve into node_modules; that is an external package,
+  // not an intra-project target — keep `targetFile` to intra-project files only.
+  const resolved = targetSf ? toPosix(targetSf.getFilePath()) : null;
+  const inNodeModules = resolved !== null && resolved.includes('/node_modules/');
+  const targetFile = inNodeModules ? null : resolved;
+  const isExternalPackage = !isRelative(specifier) && (resolved === null || inNodeModules);
   return {
     specifier,
     targetFile,

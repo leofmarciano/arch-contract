@@ -1,4 +1,5 @@
 import { ConfigNotFoundError, ConfigParseError, ConfigValidationError } from '../config/index.js';
+import { UnknownPresetError } from '../config/errors.js';
 import type { CliDeps } from './deps.js';
 import { ConfigError, ExitCode } from './exit-codes.js';
 
@@ -8,6 +9,7 @@ export function mapError(err: unknown, deps: CliDeps): ExitCode {
     err instanceof ConfigNotFoundError ||
     err instanceof ConfigParseError ||
     err instanceof ConfigValidationError ||
+    err instanceof UnknownPresetError ||
     err instanceof ConfigError
   ) {
     deps.stderr.write(`${err.message}\n`);
