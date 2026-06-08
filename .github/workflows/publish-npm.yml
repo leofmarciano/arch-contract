@@ -26,6 +26,23 @@ jobs:
 
       - run: pnpm -r build
 
+      - run: pnpm -r test
+
+      # Guard against tag/manifest drift: the workflow publishes package.json
+      # verbatim, so a release tagged vX.Y.Z whose commit still carries an older
+      # version would silently re-publish the old version (and 403). Fail loudly.
+      - name: Verify package.json version matches the release tag
+        if: github.event_name == 'release'
+        working-directory: packages/arch-contract
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "package.json=$PKG_VERSION  release tag=$TAG"
+          if [ "$PKG_VERSION" != "$TAG" ]; then
+            echo "::error::package.json version ($PKG_VERSION) != release tag ($TAG). Bump the version (package.json + src/index.ts + CHANGELOG) before tagging."
+            exit 1
+          fi
+
       - name: Publish to npm
         working-directory: packages/arch-contract
         run: npm publish --provenance --access public

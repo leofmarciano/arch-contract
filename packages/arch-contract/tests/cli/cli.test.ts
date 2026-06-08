@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { main } from '../../src/cli/index.js';
 import { ExitCode } from '../../src/cli/exit-codes.js';
+import { VERSION } from '../../src/index.js';
 import { capture } from '../helpers/cli.js';
 import { makeTmpDir, rmDir, writeFile } from '../helpers/tmp.js';
 
@@ -147,7 +148,8 @@ describe('top-level dispatch', () => {
   it('--version prints the version', async () => {
     const c = capture(SAMPLE);
     await main(argv('--version'), c.deps);
-    expect(c.out().trim()).toBe('0.1.1');
+    // assert against the source-of-truth constant so a version bump never breaks this
+    expect(c.out().trim()).toBe(VERSION);
   });
 
   it('an unknown command returns ConfigError', async () => {

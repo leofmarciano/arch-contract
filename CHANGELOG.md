@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-08
+
 ### Added
 
 - **Architecture presets** — 10 built-in, strict presets activated with
@@ -72,6 +74,7 @@ through the automated pipeline.
 - **AI agent contract** — a controlled, idempotent instruction block synced into
   `AGENTS.md`, `CLAUDE.md` and other configured docs.
 
-[Unreleased]: https://github.com/leofmarciano/arch-contract/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/leofmarciano/arch-contract/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/leofmarciano/arch-contract/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/leofmarciano/arch-contract/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/leofmarciano/arch-contract/releases/tag/v0.1.0
