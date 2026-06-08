@@ -42,7 +42,10 @@ pnpm -r test                                             # green
 # 4. Confirm main carries the bump, then cut the release (this triggers publish):
 git fetch origin
 git show origin/main:packages/arch-contract/package.json | grep '"version"'   # == X.Y.Z
-gh release create vX.Y.Z --target main --title "vX.Y.Z" --notes-from-changelog
+
+# Release notes: either auto-generate from merged PRs (--generate-notes),
+# or paste the CHANGELOG section for this version via --notes-file.
+gh release create vX.Y.Z --target main --title "vX.Y.Z" --generate-notes
 ```
 
 > The git tag **must** be `vX.Y.Z` and point at the commit that contains the
