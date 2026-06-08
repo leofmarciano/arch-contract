@@ -13,6 +13,7 @@ import { runGraphCommand } from './commands/graph.js';
 import { runInitCommand } from './commands/init.js';
 import { runPresetsCommand } from './commands/presets.js';
 import { runSyncAgentDocsCommand } from './commands/sync-agent-docs.js';
+import { runSyncAgentRulesCommand } from './commands/sync-agent-rules.js';
 import { runValidateConfigCommand } from './commands/validate-config.js';
 import { defaultDeps, type CliDeps } from './deps.js';
 import { ExitCode } from './exit-codes.js';
@@ -32,6 +33,7 @@ interface RawOptions {
   out?: string;
   reason?: string;
   check?: boolean;
+  onlyExisting?: boolean;
 }
 
 function baselineFlag(o: RawOptions): boolean | undefined {
@@ -61,6 +63,12 @@ const ACTIONS: Record<
     runExplainCommand({ rule: positional, config: o.config }, deps, theme),
   'sync-agent-docs': (deps, theme, { options: o }) =>
     runSyncAgentDocsCommand({ config: o.config, check: o.check }, deps, theme),
+  'sync-agent-rules': (deps, theme, { options: o }) =>
+    runSyncAgentRulesCommand(
+      { config: o.config, check: o.check, onlyExisting: o.onlyExisting },
+      deps,
+      theme,
+    ),
   'agent-instructions': (deps, theme, { options: o }) =>
     runAgentInstructionsCommand({ config: o.config }, deps, theme),
 };

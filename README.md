@@ -88,9 +88,23 @@ expectations:
 | `arch-contract graph` | Print the layer dependency graph (mermaid) |
 | `arch-contract explain [rule]` | Explain a rule or expectation |
 | `arch-contract sync-agent-docs` | Insert/update the agent contract block in docs (`--check` for CI) |
+| `arch-contract sync-agent-rules` | Write the architecture rules into `AGENTS.md`/`CLAUDE.md`/… so AI agents follow them (`--check`, `--only-existing`) |
 | `arch-contract agent-instructions` | Print the raw agent instructions |
 
 Exit codes: `0` ok · `1` violations / runtime error · `2` config error.
+
+### Teaching AI agents your rules
+
+Two commands keep AI agent docs (`AGENTS.md`, `CLAUDE.md`, `CURSOR.md`, `GEMINI.md`, `CODEX.md`, `WINDSURF.md`) in sync — each owns its own marked block, so they coexist in one file:
+
+- **`sync-agent-docs`** writes a short *contract* block: the validation command plus the `agent.instructions` you authored.
+- **`sync-agent-rules`** generates a full, plain-language *rules guide* from your config — layers and where files live, the allowed-dependency matrix, module boundaries, every naming/code expectation, and an "adding a new file" checklist — so generations respect the architecture and pass `check`. It targets all known agent docs by default (creating missing ones); use `--only-existing` to update just the files you already have, and `--check` in CI.
+
+```bash
+arch-contract sync-agent-rules                 # write/update the rules guide in every known agent doc
+arch-contract sync-agent-rules --only-existing # only touch docs that already exist
+arch-contract sync-agent-rules --check         # CI: fail if the guide is out of date
+```
 
 ## Presets
 

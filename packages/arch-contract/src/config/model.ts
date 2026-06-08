@@ -140,6 +140,8 @@ export interface NormalizedConfig {
 }
 
 export const DEFAULT_MARKDOWN_BLOCK_ID = 'arch-contract-agent-contract';
+/** Marker id for the generated architecture-rules block (separate from the contract block). */
+export const DEFAULT_ARCHITECTURE_BLOCK_ID = 'arch-contract-architecture';
 export const DEFAULT_EXCLUDES = [
   '**/*.test.ts',
   '**/*.spec.ts',
