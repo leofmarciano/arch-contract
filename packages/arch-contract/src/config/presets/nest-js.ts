@@ -11,7 +11,9 @@ export const NEST_JS: PresetFragment = {
   },
   modules: { pattern: 'src/*', publicApi: 'index.ts' },
   layers: [
-    { name: 'app-bootstrap', match: ['src/main.ts', 'src/app.module.ts'] },
+    // main.ts only — the root app.module.ts falls through to the `modules` layer
+    // (Nest's root AppModule legitimately wires controllers + providers).
+    { name: 'app-bootstrap', match: ['src/main.ts'] },
     { name: 'config', match: ['src/config/**'] },
     { name: 'common', match: ['src/common/**'] },
     { name: 'dtos', match: ['src/**/dto/**', 'src/**/dtos/**'] },
@@ -115,9 +117,12 @@ export const NEST_JS: PresetFragment = {
       severity: 'error',
     },
     {
+      // `nest g resource` emits `export class Cat {}` (no Entity suffix), so we
+      // only assert the entity is a named-export class.
       name: 'entities-are-classes',
       expect: { path: 'src/**/*.entity.ts' },
-      to: { be: ['class'], haveSuffix: ['Entity'], notHave: ['defaultExport'] },
+      appliesTo: { kind: ['class'] },
+      to: { be: ['class'], notHave: ['defaultExport'] },
       ignoring: ['**/*.spec.ts'],
       severity: 'warning',
     },

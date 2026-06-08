@@ -81,6 +81,13 @@ export interface NormalizedExpectation {
   clauses: Clause[];
   ignoring: string[];
   severity: Severity;
+  /**
+   * Restrict declaration-level clauses (be/extend/implement/haveMethod/
+   * haveDecorator/notHaveDecorator/haveSuffix) to declarations of these kinds.
+   * E.g. `{ kind: ['class'] }` checks only classes, so a co-located input type
+   * in a `*.use-case.ts` file is ignored.
+   */
+  appliesTo?: { kind: SymbolKind[] };
 }
 
 export type AgentOnFailure = 'fix-before-finish' | 'warn' | 'ignore';

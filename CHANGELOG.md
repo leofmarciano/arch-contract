@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-08
+
 ### Added
 
 - **Architecture presets** — 10 built-in, strict presets activated with
@@ -18,6 +20,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   "did you mean" hint (exit 2).
 - **Engine** — `notHave: ['namespaceExport']` / star-export detection is now
   implemented (was previously a silent no-op).
+- **Engine** — `appliesTo: { kind: [...] }` on an expectation scopes
+  declaration-level clauses (`be`/`haveSuffix`/`extend`/`implement`/`haveMethod`/
+  `haveDecorator`) to specific symbol kinds, so a co-located input/command DTO in
+  a `*.use-case.ts` no longer trips a class-only rule.
+- **Engine** — project analysis now auto-loads the project `tsconfig.json` and
+  the `package.json` `imports` map (subpath `#`-aliases), so import-based rules
+  resolve `@/*` and `#alias/*` edges instead of silently missing them.
+
+### Fixed
+
+- Validated every preset against real projects scaffolded with each framework's
+  official CLI. Fixes for false positives on idiomatic/framework-generated code:
+  `nest-js` (bootstrap layer, dropped `Entity` suffix), `nextjs` (DI
+  `composition` layer + `@/*` alias resolution), `tanstack-starter`/`elysiajs`
+  (server-fn/module composition roots may wire infrastructure), `encore-ts`
+  (`encore.gen/**` excluded, `api` catch-all), and `adonisjs` (dedicated `env`
+  leaf layer so framework config files may import `#start/env`).
 
 ## [0.1.1] - 2026-06-08
 
@@ -55,6 +74,7 @@ through the automated pipeline.
 - **AI agent contract** — a controlled, idempotent instruction block synced into
   `AGENTS.md`, `CLAUDE.md` and other configured docs.
 
-[Unreleased]: https://github.com/leofmarciano/arch-contract/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/leofmarciano/arch-contract/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/leofmarciano/arch-contract/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/leofmarciano/arch-contract/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/leofmarciano/arch-contract/releases/tag/v0.1.0

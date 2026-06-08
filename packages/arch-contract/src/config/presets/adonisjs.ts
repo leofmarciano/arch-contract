@@ -10,6 +10,10 @@ export const ADONISJS: PresetFragment = {
   },
   layers: [
     { name: 'routes', match: ['start/routes.ts', 'start/routes/**/*.ts'] },
+    // `start/env.ts` is the validated-env primitive read by almost every config
+    // file and service — a foundational leaf, not part of the HTTP kernel. It must
+    // be matched BEFORE the `start/**/*.ts` kernel catch-all (first-match-wins).
+    { name: 'env', match: ['start/env.ts'] },
     { name: 'kernel', match: ['start/kernel.ts', 'start/**/*.ts'] },
     { name: 'controllers', match: ['app/controllers/**/*.ts'] },
     { name: 'middleware', match: ['app/middleware/**/*.ts'] },
@@ -26,21 +30,23 @@ export const ADONISJS: PresetFragment = {
     { name: 'database', match: ['database/migrations/**/*.ts', 'database/seeders/**/*.ts', 'database/factories/**/*.ts'] },
   ],
   ruleset: {
-    routes: { mayDependOn: ['controllers', 'middleware', 'kernel', 'config'] },
-    kernel: { mayDependOn: ['middleware', 'controllers', 'config'] },
-    controllers: { mayDependOn: ['services', 'validators', 'policies', 'models', 'exceptions', 'config'] },
-    middleware: { mayDependOn: ['services', 'policies', 'exceptions', 'config'] },
-    validators: { mayDependOn: ['config'] },
-    policies: { mayDependOn: ['models', 'services', 'exceptions', 'config'] },
-    services: { mayDependOn: ['models', 'validators', 'exceptions', 'mails', 'listeners', 'config'] },
-    models: { mayDependOn: ['config'] },
-    exceptions: { mayDependOn: ['config'] },
-    mails: { mayDependOn: ['models', 'config'] },
-    listeners: { mayDependOn: ['services', 'models', 'mails', 'exceptions', 'config'] },
-    providers: { mayDependOn: ['services', 'config'] },
-    commands: { mayDependOn: ['services', 'models', 'config'] },
-    config: { mayDependOn: [] },
-    database: { mayDependOn: ['models', 'config'] },
+    routes: { mayDependOn: ['controllers', 'middleware', 'kernel', 'config', 'env'] },
+    kernel: { mayDependOn: ['middleware', 'controllers', 'config', 'env'] },
+    controllers: { mayDependOn: ['services', 'validators', 'policies', 'models', 'exceptions', 'config', 'env'] },
+    middleware: { mayDependOn: ['services', 'policies', 'exceptions', 'config', 'env'] },
+    validators: { mayDependOn: ['config', 'env'] },
+    policies: { mayDependOn: ['models', 'services', 'exceptions', 'config', 'env'] },
+    services: { mayDependOn: ['models', 'validators', 'exceptions', 'mails', 'listeners', 'config', 'env'] },
+    models: { mayDependOn: ['config', 'env'] },
+    exceptions: { mayDependOn: ['config', 'env'] },
+    mails: { mayDependOn: ['models', 'config', 'env'] },
+    listeners: { mayDependOn: ['services', 'models', 'mails', 'exceptions', 'config', 'env'] },
+    providers: { mayDependOn: ['services', 'config', 'env'] },
+    commands: { mayDependOn: ['services', 'models', 'config', 'env'] },
+    // `config` legitimately reads the validated env primitive; `env` is a leaf.
+    config: { mayDependOn: ['env'] },
+    env: { mayDependOn: [] },
+    database: { mayDependOn: ['models', 'config', 'env'] },
   },
   rules: [
     {

@@ -123,6 +123,9 @@ function normalizeExpectation(raw: RawExpectation): NormalizedExpectation {
     clauses: expandClauses(raw.to),
     ignoring: toStringArray(raw.ignoring),
     severity: raw.severity ?? 'error',
+    ...(raw.appliesTo !== undefined
+      ? { appliesTo: { kind: raw.appliesTo.kind as SymbolKind[] } }
+      : {}),
   };
 }
 

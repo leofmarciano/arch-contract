@@ -1,6 +1,6 @@
 // Public programmatic API surface for arch-contract.
 
-export const VERSION = '0.1.1';
+export const VERSION = '0.2.0';
 
 export type {
   AnalysisContext,

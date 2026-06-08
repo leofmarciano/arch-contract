@@ -27,6 +27,21 @@ jobs:
 
       - run: pnpm -r build
 
+      - run: pnpm -r test
+
+      # Guard against tag/manifest drift (see publish-npm.yml).
+      - name: Verify package.json version matches the release tag
+        if: github.event_name == 'release'
+        working-directory: packages/arch-contract
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "package.json=$PKG_VERSION  release tag=$TAG"
+          if [ "$PKG_VERSION" != "$TAG" ]; then
+            echo "::error::package.json version ($PKG_VERSION) != release tag ($TAG). Bump the version (package.json + src/index.ts + CHANGELOG) before tagging."
+            exit 1
+          fi
+
       # GitHub Packages requires the package name to be scoped to the owner.
       - name: Scope package name for GitHub Packages
         working-directory: packages/arch-contract

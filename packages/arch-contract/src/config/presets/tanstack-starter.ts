@@ -18,7 +18,9 @@ export const TANSTACK_STARTER: PresetFragment = {
   ],
   ruleset: {
     'presentation-routes': { mayDependOn: ['server-fn', 'application', 'domain', 'shared'] },
-    'server-fn': { mayDependOn: ['application', 'domain', 'shared'] },
+    // createServerFn().handler() is the idiomatic composition root (no DI
+    // container), so it may instantiate concrete adapters from infrastructure.
+    'server-fn': { mayDependOn: ['application', 'domain', 'infrastructure', 'shared'] },
     application: { mayDependOn: ['domain', 'shared'] },
     domain: { mayDependOn: [] },
     infrastructure: { mayDependOn: ['domain', 'application', 'shared'] },
@@ -45,9 +47,19 @@ export const TANSTACK_STARTER: PresetFragment = {
       severity: 'error',
     },
     {
-      name: 'routes-and-server-fns-do-not-import-the-orm-directly',
-      expect: { path: ['src/routes/**/*.{ts,tsx}', 'src/server/**/*.{ts,tsx}', 'src/**/*.server.{ts,tsx}'] },
+      // Routes must not reach the ORM/infra at all (use server fns); server fns
+      // (the composition root) may wire infra but still must not import the ORM
+      // package directly — so the path-ban is scoped to routes, the package-ban
+      // to both.
+      name: 'routes-do-not-import-infrastructure',
+      expect: { path: ['src/routes/**/*.{ts,tsx}'] },
       to: { notDependOnPackages: ORM_PACKAGES, notDependOnPaths: INFRA_PATHS },
+      severity: 'error',
+    },
+    {
+      name: 'server-fns-do-not-import-the-orm-directly',
+      expect: { path: ['src/server/**/*.{ts,tsx}', 'src/**/*.server.{ts,tsx}'] },
+      to: { notDependOnPackages: ORM_PACKAGES },
       severity: 'error',
     },
   ],
