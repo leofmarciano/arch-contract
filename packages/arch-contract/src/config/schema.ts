@@ -199,6 +199,9 @@ export const configSchema = z
   .object({
     version: z.literal(1),
     project: projectSchema,
+    // Resolved + stripped by applyPresets before this schema runs; declared here
+    // as defense-in-depth so the key is documented and never trips strict().
+    presets: stringOrArray.optional(),
     paths: pathsSchema.optional(),
     layers: z.array(layerSchema).min(1),
     ruleset: z.record(z.string(), rulesetEntrySchema).optional(),

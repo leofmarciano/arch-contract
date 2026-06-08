@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Architecture presets** — 10 built-in, strict presets activated with
+  `presets: [<name>]`: `clean-architecture`, `hexagonal`, `node-service`,
+  `nestjs-clean`, `nest-js`, `nextjs`, `tanstack-starter`, `adonisjs`,
+  `elysiajs`, `encore-ts`. A preset is a partial config merged **under** yours
+  (you always win: override by `name`, `ruleset` replaces per layer).
+- **CLI** — `arch-contract presets [name]` lists/shows presets; `init --preset
+  <name>` scaffolds a config that uses one; unknown presets fail with a
+  "did you mean" hint (exit 2).
+- **Engine** — `notHave: ['namespaceExport']` / star-export detection is now
+  implemented (was previously a silent no-op).
+
 ## [0.1.1] - 2026-06-08
 
 ### Added

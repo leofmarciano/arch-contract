@@ -63,6 +63,13 @@ function readCallsAndNews(sf: SourceFile): { calls: CallRecord[]; news: NewRecor
   return { calls, news };
 }
 
+/** A star export: `export * from './m'` or `export * as ns from './m'`. */
+function hasNamespaceExport(sf: SourceFile): boolean {
+  return sf
+    .getExportDeclarations()
+    .some((d) => d.isNamespaceExport() || d.getNamespaceExport() !== undefined);
+}
+
 /** Parse a single SourceFile into the canonical FileFacts (layer/module filled later). */
 export function readSourceFile(sf: SourceFile, rootDir: string): FileFacts {
   const path = toPosix(sf.getFilePath());
@@ -74,5 +81,6 @@ export function readSourceFile(sf: SourceFile, rootDir: string): FileFacts {
     declarations: [...readClasses(sf), ...readInterfaces(sf), ...readSimpleDeclarations(sf)],
     calls,
     news,
+    hasNamespaceExport: hasNamespaceExport(sf),
   };
 }

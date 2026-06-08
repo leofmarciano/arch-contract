@@ -35,6 +35,19 @@ describe('readImports', () => {
     expect(recs[0]?.targetFile).toBeNull();
   });
 
+  it('treats a node_modules-resolved subpath import as an external package', () => {
+    const recs = importsOf(
+      {
+        '/proj/src/a.ts': `import { APIError } from 'encore.dev/api';`,
+        '/proj/node_modules/encore.dev/api.d.ts': `export declare class APIError {}`,
+      },
+      '/proj/src/a.ts',
+    );
+    expect(recs[0]?.isExternalPackage).toBe(true);
+    expect(recs[0]?.packageName).toBe('encore.dev');
+    expect(recs[0]?.targetFile).toBeNull();
+  });
+
   it('parses a scoped external package', () => {
     const recs = importsOf(
       { '/proj/src/a.ts': `import { Injectable } from '@nestjs/common';` },

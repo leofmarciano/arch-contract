@@ -201,6 +201,14 @@ export function evalClassClause(
             );
           }
         }
+        if (clause.kind === 'notHave' && clause.values.includes('namespaceExport') && facts.hasNamespaceExport) {
+          out.push(
+            v(exp, facts, {
+              target: 'namespaceExport',
+              message: `File must not have a namespace/star export (\`export * ...\`).`,
+            }),
+          );
+        }
         break;
       }
       default:

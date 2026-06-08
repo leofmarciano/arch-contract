@@ -10,6 +10,7 @@ import { runCheckCommand } from './commands/check.js';
 import { runExplainCommand } from './commands/explain.js';
 import { runGraphCommand } from './commands/graph.js';
 import { runInitCommand } from './commands/init.js';
+import { runPresetsCommand } from './commands/presets.js';
 import { runSyncAgentDocsCommand } from './commands/sync-agent-docs.js';
 import { runValidateConfigCommand } from './commands/validate-config.js';
 import { defaultDeps, type CliDeps } from './deps.js';
@@ -23,6 +24,7 @@ interface RawOptions {
   useBaseline?: boolean;
   force?: boolean;
   path?: string;
+  preset?: string;
   out?: string;
   reason?: string;
   check?: boolean;
@@ -40,7 +42,8 @@ Usage: arch-contract <command> [options]
 
 Commands:
   check               Validate the architecture contract (exit 1 on violations)
-  init                Scaffold an arch-contract.yaml
+  init                Scaffold an arch-contract.yaml (--preset <name> to use a preset)
+  presets [name]      List built-in architecture presets (or show one)
   validate-config     Validate the config without analyzing the project
   baseline            Record current violations as an accepted baseline
   graph               Print the layer dependency graph (mermaid)
@@ -93,8 +96,15 @@ export async function main(argv: string[], deps: CliDeps = defaultDeps()): Promi
     .command('init', 'Scaffold an arch-contract.yaml')
     .option('--force', 'Overwrite an existing config')
     .option('--path <path>', 'Target path')
+    .option('--preset <name>', 'Scaffold a config that uses a built-in preset')
     .action((o: RawOptions) =>
-      dispatch(() => runInitCommand({ force: o.force, path: o.path }, deps)),
+      dispatch(() => runInitCommand({ force: o.force, path: o.path, preset: o.preset }, deps)),
+    );
+
+  cli
+    .command('presets [name]', 'List built-in architecture presets (or show one)')
+    .action((name: string | undefined, _o: RawOptions) =>
+      dispatch(() => runPresetsCommand({ name }, deps)),
     );
 
   cli

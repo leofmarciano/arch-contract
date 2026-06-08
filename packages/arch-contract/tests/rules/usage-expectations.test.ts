@@ -89,6 +89,81 @@ describe('notDependOnPackages', () => {
     );
     expect(v).toEqual([]);
   });
+
+  it('flags a subpath import that resolves into node_modules', () => {
+    const v = runExpectation(
+      {
+        [at('src/domain/User.ts')]: `import { APIError } from 'encore.dev/api';\nexport const x = APIError;`,
+        [at('node_modules/encore.dev/api.d.ts')]: `export declare class APIError {}`,
+      },
+      {
+        name: 'no-frameworks',
+        expect: { path: 'src/**/domain/**/*.ts' },
+        to: { notDependOnPackages: ['encore.dev', 'encore.dev/*'] },
+      },
+    );
+    expect(v).toHaveLength(1);
+    expect(v[0]?.target).toBe('encore.dev/api');
+  });
+
+  it('flags a type-only subpath import', () => {
+    const v = runExpectation(
+      {
+        [at('src/domain/User.ts')]: `import type { Header } from 'encore.dev/api';\nexport type X = Header;`,
+        [at('node_modules/encore.dev/api.d.ts')]: `export type Header = string;`,
+      },
+      {
+        name: 'no-frameworks',
+        expect: { path: 'src/**/domain/**/*.ts' },
+        to: { notDependOnPackages: ['encore.dev/*'] },
+      },
+    );
+    expect(v).toHaveLength(1);
+    expect(v[0]?.target).toBe('encore.dev/api');
+  });
+
+  it('catches a resolved subpath with a bare package-name pattern', () => {
+    const v = runExpectation(
+      {
+        [at('src/domain/User.ts')]: `import { APIError } from 'encore.dev/api';\nexport const x = APIError;`,
+        [at('node_modules/encore.dev/api.d.ts')]: `export declare class APIError {}`,
+      },
+      {
+        name: 'no-frameworks',
+        expect: { path: 'src/**/domain/**/*.ts' },
+        to: { notDependOnPackages: ['encore.dev'] },
+      },
+    );
+    expect(v).toHaveLength(1);
+  });
+
+  it('flags an unresolved path-alias specifier', () => {
+    const v = runExpectation(
+      { [at('src/domain/User.ts')]: `import { getAuthData } from '~encore/auth';\nexport const x = getAuthData;` },
+      {
+        name: 'no-frameworks',
+        expect: { path: 'src/**/domain/**/*.ts' },
+        to: { notDependOnPackages: ['~encore/*'] },
+      },
+    );
+    expect(v).toHaveLength(1);
+    expect(v[0]?.target).toBe('~encore/auth');
+  });
+
+  it('never reports a relative import', () => {
+    const v = runExpectation(
+      {
+        [at('src/domain/User.ts')]: `import { db } from '../infra/db';\nexport const x = db;`,
+        [at('src/infra/db.ts')]: `export const db = 1;`,
+      },
+      {
+        name: 'no-frameworks',
+        expect: { path: 'src/**/domain/**/*.ts' },
+        to: { notDependOnPackages: ['*'] },
+      },
+    );
+    expect(v).toEqual([]);
+  });
 });
 
 describe('notDependOnPaths', () => {

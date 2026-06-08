@@ -76,6 +76,24 @@ arch-contract agent-instructions
 
 Exit codes: `0` ok · `1` violations / runtime error · `2` config error.
 
+## Presets
+
+Activate a built-in, strict architecture preset instead of writing rules from scratch:
+
+```yaml
+version: 1
+project: { name: my-service }
+presets: [clean-architecture]   # merged UNDER your config — you always win
+```
+
+```bash
+arch-contract presets                  # list all 10
+arch-contract presets nestjs-clean     # show a preset's layers + rules
+arch-contract init --preset hexagonal  # scaffold a config using it
+```
+
+Built-in presets: `clean-architecture`, `hexagonal`, `node-service`, `nestjs-clean`, `nest-js`, `nextjs`, `tanstack-starter`, `adonisjs`, `elysiajs`, `encore-ts`. Opinionated frameworks follow their own conventions; unopinionated ones get Clean Architecture. Your config merges on top (override layers/rules/expectations by `name`; `ruleset` replaces per layer). See the [preset docs](https://github.com/leofmarciano/arch-contract/tree/main/docs/presets).
+
 ## Baseline (legacy adoption)
 
 ```bash

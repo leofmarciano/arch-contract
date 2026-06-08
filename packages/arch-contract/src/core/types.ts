@@ -161,6 +161,8 @@ export interface FileFacts {
   declarations: DeclarationRecord[];
   calls: CallRecord[];
   news: NewRecord[];
+  /** true when the file has a star export: `export * from` or `export * as ns from` */
+  hasNamespaceExport: boolean;
 }
 
 /** A file that uses (imports) one or more exported symbols of another file. */
