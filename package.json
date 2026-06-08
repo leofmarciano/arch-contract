@@ -20,5 +20,8 @@
     "arch:check:json": "node packages/arch-contract/dist/cli.js check --format json",
     "arch:docs": "node packages/arch-contract/dist/cli.js sync-agent-docs",
     "arch:docs:check": "node packages/arch-contract/dist/cli.js sync-agent-docs --check"
+  },
+  "devDependencies": {
+    "arch-contract": "workspace:*"
   }
 }
