@@ -1,0 +1,57 @@
+# ArchContract validating its own architecture (dogfooding).
+version: 1
+
+project:
+  name: arch-contract
+
+paths:
+  include:
+    - packages/arch-contract/src
+
+layers:
+  - name: core
+    match: [packages/arch-contract/src/core/**/*.ts]
+  - name: config
+    match: [packages/arch-contract/src/config/**/*.ts]
+  - name: project
+    match: [packages/arch-contract/src/project/**/*.ts]
+  - name: parser
+    match: [packages/arch-contract/src/parser/**/*.ts]
+  - name: graph
+    match: [packages/arch-contract/src/graph/**/*.ts]
+  - name: rules
+    match: [packages/arch-contract/src/rules/**/*.ts]
+  - name: reporters
+    match: [packages/arch-contract/src/reporters/**/*.ts]
+  - name: baseline
+    match: [packages/arch-contract/src/baseline/**/*.ts]
+  - name: agents
+    match: [packages/arch-contract/src/agents/**/*.ts]
+  - name: cli
+    match: [packages/arch-contract/src/cli/**/*.ts]
+
+rules:
+  # No file-level dependency cycles anywhere in the codebase.
+  - name: no-cycles
+    type: no-cycles
+
+expectations:
+  # Reporters render pure strings — they must not pull in ts-morph.
+  - name: reporters-stay-pure
+    expect:
+      layer: reporters
+    to:
+      notDependOnPackages:
+        - ts-morph
+
+agent:
+  enabled: true
+  validationCommand: pnpm arch:check
+  updateDocs:
+    - AGENTS.md
+    - CLAUDE.md
+  instructions:
+    - Run `pnpm arch:check` after every completed task.
+    - Keep shared types in src/core/types.ts; never re-declare Violation/Selector elsewhere.
+    - Fix architectural violations in code before finishing; do not weaken rules to pass.
+    - Add a failing test first (TDD) for any behavior change.

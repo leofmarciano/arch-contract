@@ -1,0 +1,63 @@
+{
+  "name": "arch-contract",
+  "version": "0.1.0",
+  "description": "ArchContract — architecture contract validator for TypeScript projects. Enforces layers, dependency boundaries, AST expectations and agent instructions in CI/CD — without acting as a linter.",
+  "license": "MIT",
+  "author": "leofmarciano",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leofmarciano/arch-contract.git"
+  },
+  "keywords": [
+    "architecture",
+    "deptrac",
+    "pest-arch",
+    "layers",
+    "dependency-rules",
+    "typescript",
+    "ci",
+    "ast"
+  ],
+  "type": "module",
+  "bin": {
+    "arch-contract": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "cac": "^6.7.14",
+    "picomatch": "^4.0.2",
+    "ts-morph": "^24.0.0",
+    "yaml": "^2.6.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/picomatch": "^3.0.1",
+    "@vitest/coverage-v8": "^2.1.8",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
