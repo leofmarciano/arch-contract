@@ -147,7 +147,7 @@ describe('top-level dispatch', () => {
   it('--version prints the version', async () => {
     const c = capture(SAMPLE);
     await main(argv('--version'), c.deps);
-    expect(c.out().trim()).toBe('0.1.0');
+    expect(c.out().trim()).toBe('0.1.1');
   });
 
   it('an unknown command returns ConfigError', async () => {

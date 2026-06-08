@@ -6,6 +6,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-08
+
+### Added
+
+- **CI release automation** — publishing to npmjs (with npm provenance) and to
+  GitHub Packages now runs automatically on every published GitHub release.
+
+No functional changes to the library since 0.1.0; this is the first release cut
+through the automated pipeline.
+
 ## [0.1.0] - 2026-06-08
 
 ### Added
@@ -32,5 +42,6 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **AI agent contract** — a controlled, idempotent instruction block synced into
   `AGENTS.md`, `CLAUDE.md` and other configured docs.
 
-[Unreleased]: https://github.com/leofmarciano/arch-contract/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/leofmarciano/arch-contract/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/leofmarciano/arch-contract/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/leofmarciano/arch-contract/releases/tag/v0.1.0
