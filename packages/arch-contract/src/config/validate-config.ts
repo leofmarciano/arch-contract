@@ -6,6 +6,7 @@ import type { NormalizedConfig } from './model.js';
 import { normalizeConfig } from './normalize-config.js';
 import { applyPresets } from './presets.js';
 import { configSchema } from './schema.js';
+import { dirnamePosix } from '../project/path-utils.js';
 
 export interface LoadConfigResult {
   config: NormalizedConfig;
@@ -87,7 +88,10 @@ function semanticIssues(config: NormalizedConfig): ConfigIssue[] {
 
 /** Schema-validate, normalize, and semantically validate a loaded config source. */
 export function validateConfig(source: LoadedConfigSource): LoadConfigResult {
-  const parsed = configSchema.safeParse(applyPresets(source.raw));
+  // External presets resolve relative to the user's config file directory (so
+  // their node_modules / relative paths are found there, not in arch-contract's).
+  const baseDir = dirnamePosix(source.configPath);
+  const parsed = configSchema.safeParse(applyPresets(source.raw, baseDir));
   if (!parsed.success) {
     const issues: ConfigIssue[] = parsed.error.issues.map((i) => ({
       path: zodPath(i.path),

@@ -21,8 +21,13 @@ export {
   ConfigNotFoundError,
   ConfigParseError,
   ConfigValidationError,
+  InvalidPresetError,
+  PresetLoadError,
+  UnknownPresetError,
 } from './config/index.js';
 export type { NormalizedConfig, LoadConfigResult } from './config/index.js';
+// Preset authoring surface (for `arch-contract-preset-*` packages).
+export type { PresetEntry, PresetFragment, PresetMeta } from './config/index.js';
 
 export { fingerprint, createViolation, sortViolations } from './rules/violations.js';
 

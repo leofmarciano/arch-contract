@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { UnknownPresetError } from '../../src/config/errors.js';
-import { applyPresets, mergeFragment } from '../../src/config/presets.js';
+import { PresetLoadError, UnknownPresetError } from '../../src/config/errors.js';
+import { applyPresets, looksExternal, mergeFragment } from '../../src/config/presets.js';
 import { validateConfig } from '../../src/config/validate-config.js';
 
 function source(raw: unknown) {
@@ -88,6 +88,31 @@ describe('applyPresets', () => {
   it('returns raw unchanged when there is no presets key', () => {
     const raw = { version: 1, project: { name: 'x' }, layers: [{ name: 'a', match: 'src/**' }] };
     expect(applyPresets(raw)).toBe(raw);
+  });
+
+  it('throws PresetLoadError for an external-looking name that is not installed', () => {
+    expect(() =>
+      applyPresets(
+        { version: 1, project: { name: 'x' }, presets: ['arch-contract-preset-nope'] },
+        process.cwd(),
+      ),
+    ).toThrow(PresetLoadError);
+  });
+});
+
+describe('looksExternal', () => {
+  it('classifies packages, scoped packages and paths as external', () => {
+    expect(looksExternal('arch-contract-preset-foo')).toBe(true);
+    expect(looksExternal('@acme/arch-contract-preset-x')).toBe(true);
+    expect(looksExternal('@acme/whatever')).toBe(true);
+    expect(looksExternal('./presets/x.cjs')).toBe(true);
+    expect(looksExternal('/abs/x.cjs')).toBe(true);
+  });
+
+  it('does NOT classify bare names / built-ins as external (preserves typo DX)', () => {
+    expect(looksExternal('clean-architecture')).toBe(false);
+    expect(looksExternal('clean-architecure')).toBe(false); // typo → UnknownPresetError, not a package
+    expect(looksExternal('foo')).toBe(false);
   });
 
   it('the stripped+merged object passes the strict schema (no unrecognized key)', () => {

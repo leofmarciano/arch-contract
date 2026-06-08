@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { cac } from 'cac';
+import { cac, type CAC } from 'cac';
 
+import { closestMatch } from '../config/errors.js';
 import { VERSION } from '../index.js';
 import { runAgentInstructionsCommand } from './commands/agent-instructions.js';
 import { runBaselineCommand } from './commands/baseline.js';
@@ -15,7 +16,10 @@ import { runSyncAgentDocsCommand } from './commands/sync-agent-docs.js';
 import { runValidateConfigCommand } from './commands/validate-config.js';
 import { defaultDeps, type CliDeps } from './deps.js';
 import { ExitCode } from './exit-codes.js';
-import { mapError } from './map-error.js';
+import { COMMANDS, findCommand, type CommandMeta } from './help/registry.js';
+import { renderCommandHelp, renderTopLevelHelp } from './help/render-help.js';
+import { createTheme } from './style.js';
+import type { Theme } from '../reporters/theme.js';
 
 interface RawOptions {
   config?: string;
@@ -36,33 +40,65 @@ function baselineFlag(o: RawOptions): boolean | undefined {
   return undefined;
 }
 
-const HELP = `arch-contract — architecture contract validator
+/** Wires each command's parsed (positional, options) to its runner + theme. */
+type ActionContext = { positional?: string; options: RawOptions };
+const ACTIONS: Record<
+  string,
+  (deps: CliDeps, theme: Theme, ctx: ActionContext) => ExitCode | Promise<ExitCode>
+> = {
+  check: (deps, theme, { options: o }) =>
+    runCheckCommand({ config: o.config, format: o.format, baseline: baselineFlag(o) }, deps, theme),
+  init: (deps, theme, { options: o }) =>
+    runInitCommand({ force: o.force, path: o.path, preset: o.preset }, deps, theme),
+  presets: (deps, theme, { positional }) => runPresetsCommand({ name: positional }, deps, theme),
+  'validate-config': (deps, theme, { options: o }) =>
+    runValidateConfigCommand({ config: o.config }, deps, theme),
+  baseline: (deps, theme, { options: o }) =>
+    runBaselineCommand({ config: o.config, out: o.out, reason: o.reason }, deps, theme),
+  graph: (deps, theme, { options: o }) =>
+    runGraphCommand({ config: o.config, format: o.format }, deps, theme),
+  explain: (deps, theme, { positional, options: o }) =>
+    runExplainCommand({ rule: positional, config: o.config }, deps, theme),
+  'sync-agent-docs': (deps, theme, { options: o }) =>
+    runSyncAgentDocsCommand({ config: o.config, check: o.check }, deps, theme),
+  'agent-instructions': (deps, theme, { options: o }) =>
+    runAgentInstructionsCommand({ config: o.config }, deps, theme),
+};
 
-Usage: arch-contract <command> [options]
+/** Register every command from the registry, attaching its runner via ACTIONS. */
+function registerCommands(cli: CAC, deps: CliDeps, theme: Theme, setExit: (c: ExitCode) => void): void {
+  for (const cmd of COMMANDS) {
+    const command = cli.command(cmd.args ? `${cmd.name} ${cmd.args}` : cmd.name, cmd.summary);
+    for (const opt of cmd.options) {
+      command.option(opt.flag, opt.summary, opt.default !== undefined ? { default: opt.default } : {});
+    }
+    command.action((...cacArgs: unknown[]) => {
+      const options = (cacArgs.at(-1) ?? {}) as RawOptions;
+      const ctx: ActionContext = cmd.args
+        ? { positional: cacArgs[0] as string | undefined, options }
+        : { options };
+      return Promise.resolve(ACTIONS[cmd.name]?.(deps, theme, ctx) ?? ExitCode.Ok).then(setExit);
+    });
+  }
+}
 
-Commands:
-  check               Validate the architecture contract (exit 1 on violations)
-  init                Scaffold an arch-contract.yaml (--preset <name> to use a preset)
-  presets [name]      List built-in architecture presets (or show one)
-  validate-config     Validate the config without analyzing the project
-  baseline            Record current violations as an accepted baseline
-  graph               Print the layer dependency graph (mermaid)
-  explain [rule]      Explain a rule or expectation
-  sync-agent-docs     Insert/update the agent contract block in docs
-  agent-instructions  Print the raw agent instructions
+/** Effective color: explicit flags win, else the base decision carried on deps. */
+function resolveColor(rest: string[], base: boolean): boolean {
+  if (rest.includes('--no-color')) return false;
+  if (rest.includes('--color')) return true;
+  return base;
+}
 
-Common options:
-  --config <path>     Path to the arch-contract config
-  --format <format>   check: table|json|markdown|github
-  --help, -h          Show help
-  --version, -v       Show version
-`;
+const HELP_TOKENS = new Set(['--help', '-h']);
 
 /** Parse argv and run the matched command, returning an exit code. Never calls process.exit. */
 export async function main(argv: string[], deps: CliDeps = defaultDeps()): Promise<ExitCode> {
   const rest = argv.slice(2);
+  const theme = createTheme(resolveColor(rest, deps.color));
+
+  // Top-level help / version, before any command parsing.
   if (rest.length === 0 || rest[0] === '--help' || rest[0] === '-h') {
-    deps.stdout.write(HELP);
+    deps.stdout.write(renderTopLevelHelp(theme));
     return ExitCode.Ok;
   }
   if (rest[0] === '--version' || rest[0] === '-v') {
@@ -70,108 +106,42 @@ export async function main(argv: string[], deps: CliDeps = defaultDeps()): Promi
     return ExitCode.Ok;
   }
 
+  // `<command> --help`: route to that command's help and never run it.
+  const cmdMeta: CommandMeta | undefined = findCommand(rest[0] as string);
+  if (cmdMeta && rest.slice(1).some((t) => HELP_TOKENS.has(t))) {
+    deps.stdout.write(renderCommandHelp(cmdMeta, theme));
+    return ExitCode.Ok;
+  }
+
   const cli = cac('arch-contract');
+  cli.option('--color', 'Force color output (use --no-color to disable)');
   let exit: ExitCode = ExitCode.Ok;
-  const dispatch = (fn: () => ExitCode | Promise<ExitCode>): Promise<void> =>
-    Promise.resolve(fn()).then((code) => {
-      exit = code;
-    });
+  registerCommands(cli, deps, theme, (c) => {
+    exit = c;
+  });
 
-  cli
-    .command('check', 'Validate the architecture contract')
-    .option('--config <path>', 'Config path')
-    .option('--format <format>', 'table|json|markdown|github', { default: 'table' })
-    .option('--baseline', 'Apply baseline suppression (use --no-baseline to disable)')
-    .option('--use-baseline', 'Apply baseline suppression')
-    .action((o: RawOptions) =>
-      dispatch(() =>
-        runCheckCommand(
-          { config: o.config, format: o.format, baseline: baselineFlag(o) },
-          deps,
-        ),
-      ),
-    );
-
-  cli
-    .command('init', 'Scaffold an arch-contract.yaml')
-    .option('--force', 'Overwrite an existing config')
-    .option('--path <path>', 'Target path')
-    .option('--preset <name>', 'Scaffold a config that uses a built-in preset')
-    .action((o: RawOptions) =>
-      dispatch(() => runInitCommand({ force: o.force, path: o.path, preset: o.preset }, deps)),
-    );
-
-  cli
-    .command('presets [name]', 'List built-in architecture presets (or show one)')
-    .action((name: string | undefined, _o: RawOptions) =>
-      dispatch(() => runPresetsCommand({ name }, deps)),
-    );
-
-  cli
-    .command('validate-config', 'Validate the config')
-    .option('--config <path>', 'Config path')
-    .action((o: RawOptions) => dispatch(() => runValidateConfigCommand({ config: o.config }, deps)));
-
-  cli
-    .command('baseline', 'Record an accepted baseline')
-    .option('--config <path>', 'Config path')
-    .option('--out <path>', 'Output baseline path')
-    .option('--reason <text>', 'Reason recorded on each entry')
-    .action((o: RawOptions) =>
-      dispatch(() => runBaselineCommand({ config: o.config, out: o.out, reason: o.reason }, deps)),
-    );
-
-  cli
-    .command('graph', 'Print the layer dependency graph')
-    .option('--config <path>', 'Config path')
-    .option('--format <format>', 'mermaid|stub', { default: 'mermaid' })
-    .action((o: RawOptions) =>
-      dispatch(() => runGraphCommand({ config: o.config, format: o.format }, deps)),
-    );
-
-  cli
-    .command('explain [rule]', 'Explain a rule or expectation')
-    .option('--config <path>', 'Config path')
-    .action((rule: string | undefined, o: RawOptions) =>
-      dispatch(() => runExplainCommand({ rule, config: o.config }, deps)),
-    );
-
-  cli
-    .command('sync-agent-docs', 'Insert/update the agent contract block')
-    .option('--config <path>', 'Config path')
-    .option('--check', 'Report drift without writing')
-    .action((o: RawOptions) =>
-      dispatch(() => runSyncAgentDocsCommand({ config: o.config, check: o.check }, deps)),
-    );
-
-  cli
-    .command('agent-instructions', 'Print the raw agent instructions')
-    .option('--config <path>', 'Config path')
-    .action((o: RawOptions) =>
-      dispatch(() => runAgentInstructionsCommand({ config: o.config }, deps)),
-    );
-
-  let parsed;
   try {
-    parsed = cli.parse(argv, { run: false });
+    cli.parse(argv, { run: false });
   } catch (err) {
-    deps.stderr.write(`${(err as Error).message}\n`);
+    deps.stderr.write(`${theme.err((err as Error).message)}\n`);
     return ExitCode.ConfigError;
   }
 
-  if (parsed.options['help'] === true) {
-    deps.stdout.write(HELP);
-    return ExitCode.Ok;
-  }
   if (!cli.matchedCommand) {
-    deps.stderr.write(`Unknown command: ${rest[0]}\n`);
+    const name = rest[0] as string;
+    const guess = closestMatch(name, COMMANDS.map((c) => c.name));
+    const didYouMean = guess !== undefined ? ` Did you mean ${theme.cyan(guess)}?` : '';
+    const header = theme.err(`Unknown command: ${name}`);
+    const hint = theme.hint('Run `arch-contract --help` to see available commands.');
+    deps.stderr.write(`${header}.${didYouMean}\n${hint}\n`);
     return ExitCode.ConfigError;
   }
 
   try {
     await cli.runMatchedCommand();
   } catch (err) {
-    return mapError(err, deps);
+    deps.stderr.write(`${theme.err('arch-contract')}: ${(err as Error).message}\n`);
+    return ExitCode.Violations;
   }
   return exit;
 }

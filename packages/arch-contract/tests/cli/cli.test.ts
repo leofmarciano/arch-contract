@@ -152,8 +152,16 @@ describe('top-level dispatch', () => {
     expect(c.out().trim()).toBe(VERSION);
   });
 
-  it('an unknown command returns ConfigError', async () => {
+  it('an unknown command returns ConfigError and points at --help', async () => {
     const c = capture(SAMPLE);
     expect(await main(argv('bogus'), c.deps)).toBe(ExitCode.ConfigError);
+    expect(c.err()).toContain('Unknown command: bogus');
+    expect(c.err()).toContain('--help');
+  });
+
+  it('a near-miss command suggests the closest one', async () => {
+    const c = capture(SAMPLE);
+    expect(await main(argv('checkk'), c.deps)).toBe(ExitCode.ConfigError);
+    expect(c.err()).toMatch(/Did you mean.*check/);
   });
 });

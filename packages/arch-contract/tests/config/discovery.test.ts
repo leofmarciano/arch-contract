@@ -116,4 +116,19 @@ describe('discoverConfig — explicit path and errors', () => {
       expect(searched).toContain(toPosix(path.join(d, 'arch-contract.config.yaml')));
     }
   });
+
+  it('ConfigNotFoundError.message is condensed (no 16-line path dump) with an init hint', () => {
+    // Simulate a deep walk-up: 4 filenames probed across 4 directories = 16 paths.
+    const searched = ['/a/b/c', '/a/b', '/a', '/'].flatMap((dir) =>
+      ['arch-contract.yaml', 'architecture.yaml', '.arch-contract.yaml', 'arch-contract.config.yaml'].map(
+        (f) => toPosix(path.join(dir, f)),
+      ),
+    );
+    const msg = new ConfigNotFoundError(searched).message;
+    expect(msg).toContain('arch-contract init');
+    expect(msg).toContain('arch-contract.yaml');
+    expect(msg).toContain(String(searched.length)); // "16"
+    // condensed: it must NOT print one line per probed path
+    expect(msg.split('\n').length).toBeLessThan(searched.length);
+  });
 });
