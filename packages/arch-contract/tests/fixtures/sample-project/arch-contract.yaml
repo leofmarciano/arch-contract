@@ -1,0 +1,49 @@
+version: 1
+
+project:
+  name: sample-service
+
+paths:
+  include:
+    - src
+
+layers:
+  - name: domain
+    match:
+      - src/domain/**/*.ts
+  - name: application
+    match:
+      - src/application/**/*.ts
+  - name: infrastructure
+    match:
+      - src/infrastructure/**/*.ts
+
+ruleset:
+  application:
+    mayDependOn:
+      - domain
+  domain:
+    mayDependOn: []
+  infrastructure:
+    mayDependOn:
+      - domain
+      - application
+
+expectations:
+  - name: domain-must-not-use-frameworks
+    expect:
+      layer: domain
+    to:
+      notDependOnPackages:
+        - express
+    severity: error
+
+agent:
+  enabled: true
+  validationCommand: pnpm arch:check
+  updateDocs:
+    - AGENTS.md
+    - CLAUDE.md
+  instructions:
+    - Run pnpm arch:check after every completed task.
+    - Fix architectural violations in code before finishing.

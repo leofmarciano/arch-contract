@@ -1,0 +1,24 @@
+{
+  "name": "arch-contract-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "arch:check": "node packages/arch-contract/dist/cli.js check",
+    "arch:check:json": "node packages/arch-contract/dist/cli.js check --format json",
+    "arch:docs": "node packages/arch-contract/dist/cli.js sync-agent-docs",
+    "arch:docs:check": "node packages/arch-contract/dist/cli.js sync-agent-docs --check"
+  }
+}
