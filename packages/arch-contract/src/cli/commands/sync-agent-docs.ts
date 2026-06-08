@@ -1,15 +1,28 @@
 import { syncAgentDocs } from '../../agents/update-agent-docs.js';
 import { loadAndValidate } from '../../config/index.js';
+import type { Theme } from '../../reporters/theme.js';
 import type { CliDeps } from '../deps.js';
 import { ExitCode } from '../exit-codes.js';
 import { mapError } from '../map-error.js';
+import { NO_COLOR_THEME } from '../style.js';
 
 export interface SyncAgentDocsOptions {
   config?: string;
   check?: boolean;
 }
 
-export function runSyncAgentDocsCommand(opts: SyncAgentDocsOptions, deps: CliDeps): ExitCode {
+/** Color the per-file state token without changing its text. */
+function colorState(state: 'drift' | 'updated' | 'ok', theme: Theme): string {
+  if (state === 'drift') return theme.warn(state);
+  if (state === 'updated') return theme.cyan(state);
+  return theme.ok(state);
+}
+
+export function runSyncAgentDocsCommand(
+  opts: SyncAgentDocsOptions,
+  deps: CliDeps,
+  theme: Theme = NO_COLOR_THEME,
+): ExitCode {
   let config;
   try {
     ({ config } = loadAndValidate({
@@ -17,7 +30,7 @@ export function runSyncAgentDocsCommand(opts: SyncAgentDocsOptions, deps: CliDep
       ...(opts.config !== undefined ? { explicitPath: opts.config } : {}),
     }));
   } catch (err) {
-    return mapError(err, deps);
+    return mapError(err, deps, theme);
   }
 
   const { results, drift } = syncAgentDocs(config.rootDir, config.agent, {
@@ -25,16 +38,18 @@ export function runSyncAgentDocsCommand(opts: SyncAgentDocsOptions, deps: CliDep
   });
 
   if (results.length === 0) {
-    deps.stdout.write('No agent docs configured (set agent.updateDocs).\n');
+    deps.stdout.write(`${theme.hint('No agent docs configured (set agent.updateDocs).')}\n`);
     return ExitCode.Ok;
   }
   for (const r of results) {
     const state = r.changed ? (opts.check === true ? 'drift' : 'updated') : 'ok';
-    deps.stdout.write(`${state}: ${r.path}\n`);
+    deps.stdout.write(`${colorState(state, theme)}: ${theme.hint(r.path)}\n`);
   }
 
   if (opts.check === true && drift) {
-    deps.stderr.write('Agent docs are out of date. Run `arch-contract sync-agent-docs`.\n');
+    deps.stderr.write(
+      `${theme.warn('Agent docs are out of date.')} Run ${theme.cyan('arch-contract sync-agent-docs')}.\n`,
+    );
     return ExitCode.Violations;
   }
   return ExitCode.Ok;

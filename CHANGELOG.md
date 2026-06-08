@@ -6,6 +6,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **CLI color theming** — human-facing CLI output (the `table` reporter, `presets`,
+  help, errors) is now themed via a `Theme` abstraction (`src/reporters/theme.ts`),
+  with a no-color fallback so machine formats (`json`/`github`) stay byte-stable.
+- **External preset packages** — activate a published package or a local file the
+  same way as a built-in: `presets: [arch-contract-preset-acme]`,
+  `["@acme/arch-contract-preset-x"]`, or `[./arch/house-rules.cjs]`. A name is
+  external when it is scoped (`@…`), a path (`./…`, `/…`), or contains
+  `arch-contract-preset`; bare unknown names still get the "did you mean" hint.
+  Externals resolve synchronously from the consumer's `node_modules` (relative to
+  the config file) and merge with the same semantics as built-ins (you always win).
+  Export a `PresetFragment` or a `{ meta, fragment }` entry; `presets <pkg>` and
+  `init --preset <pkg>` support externals. New `PresetLoadError` /
+  `InvalidPresetError`; new `presetFragmentSchema`. See
+  [docs/presets/authoring.md](./docs/presets/authoring.md).
+
 ## [0.2.0] - 2026-06-08
 
 ### Added

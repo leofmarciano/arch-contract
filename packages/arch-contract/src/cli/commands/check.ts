@@ -1,9 +1,11 @@
 import { applyBaseline, loadBaseline } from '../../baseline/index.js';
 import { runCheck } from '../../core/run-check.js';
 import { getReporter, UnknownReporterError } from '../../reporters/index.js';
+import type { Theme } from '../../reporters/theme.js';
 import type { CliDeps } from '../deps.js';
 import { ExitCode } from '../exit-codes.js';
 import { mapError } from '../map-error.js';
+import { NO_COLOR_THEME } from '../style.js';
 
 export interface CheckOptions {
   config?: string;
@@ -12,14 +14,18 @@ export interface CheckOptions {
   baseline?: boolean;
 }
 
-export function runCheckCommand(opts: CheckOptions, deps: CliDeps): ExitCode {
+export function runCheckCommand(
+  opts: CheckOptions,
+  deps: CliDeps,
+  theme: Theme = NO_COLOR_THEME,
+): ExitCode {
   const format = opts.format ?? 'table';
   let reporter;
   try {
     reporter = getReporter(format);
   } catch (err) {
     if (err instanceof UnknownReporterError) {
-      deps.stderr.write(`${err.message}\n`);
+      deps.stderr.write(`${theme.err(err.message)}\n`);
       return ExitCode.ConfigError;
     }
     throw err;
@@ -29,7 +35,7 @@ export function runCheckCommand(opts: CheckOptions, deps: CliDeps): ExitCode {
   try {
     res = runCheck({ cwd: deps.cwd, ...(opts.config !== undefined ? { config: opts.config } : {}) });
   } catch (err) {
-    return mapError(err, deps);
+    return mapError(err, deps, theme);
   }
 
   let result = res.result;
@@ -39,6 +45,7 @@ export function runCheckCommand(opts: CheckOptions, deps: CliDeps): ExitCode {
     if (baseline !== null) result = applyBaseline(result, baseline);
   }
 
-  deps.stdout.write(`${reporter.render(result)}\n`);
+  // Only the human `table` format is themed; machine formats stay byte-stable.
+  deps.stdout.write(`${reporter.render(result, format === 'table' ? theme : undefined)}\n`);
   return result.summary.passed ? ExitCode.Ok : ExitCode.Violations;
 }

@@ -12,21 +12,21 @@ const projectSchema = z
   })
   .strict();
 
-const pathsSchema = z
+export const pathsSchema = z
   .object({
     include: stringOrArray.optional(),
     exclude: stringOrArray.optional(),
   })
   .strict();
 
-const layerSchema = z
+export const layerSchema = z
   .object({
     name: z.string().min(1),
     match: stringOrArray,
   })
   .strict();
 
-const rulesetEntrySchema = z
+export const rulesetEntrySchema = z
   .object({
     mayDependOn: stringOrArray.optional(),
   })
@@ -96,7 +96,7 @@ const publicApiBoundaryRule = z
   })
   .strict();
 
-const ruleSchema = z.discriminatedUnion('type', [
+export const ruleSchema = z.discriminatedUnion('type', [
   forbiddenImportRule,
   allowedDependencyRule,
   noCyclesRule,
@@ -154,7 +154,7 @@ const expectSchema = z
     }
   });
 
-const expectationSchema = z
+export const expectationSchema = z
   .object({
     name: z.string().min(1),
     expect: expectSchema,
@@ -189,10 +189,28 @@ const baselineSchema = z.union([
   z.object({ path: z.string().optional(), createIfMissing: z.boolean().optional() }).strict(),
 ]);
 
-const modulesSchema = z
+export const modulesSchema = z
   .object({
     pattern: z.string().optional(),
     publicApi: z.string().optional(),
+  })
+  .strict();
+
+/**
+ * A preset fragment: the same six mergeable sections a built-in preset may set,
+ * all OPTIONAL (note: `layers` here has NO `.min(1)` — a preset may add zero
+ * layers). Built from the exact sub-schemas above so it never drifts from the
+ * full config schema. Used to validate EXTERNAL preset packages at load time, so
+ * a malformed fragment is reported against the package, not after the merge.
+ */
+export const presetFragmentSchema = z
+  .object({
+    paths: pathsSchema.optional(),
+    layers: z.array(layerSchema).optional(),
+    ruleset: z.record(z.string(), rulesetEntrySchema).optional(),
+    rules: z.array(ruleSchema).optional(),
+    expectations: z.array(expectationSchema).optional(),
+    modules: modulesSchema.optional(),
   })
   .strict();
 
@@ -216,6 +234,7 @@ export const configSchema = z
   .strict();
 
 export type RawConfig = z.infer<typeof configSchema>;
+export type PresetFragmentInput = z.infer<typeof presetFragmentSchema>;
 export type RawRule = z.infer<typeof ruleSchema>;
 export type RawExpectation = z.infer<typeof expectationSchema>;
 export type RawTo = z.infer<typeof toSchema>;

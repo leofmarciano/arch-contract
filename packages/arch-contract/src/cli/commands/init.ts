@@ -2,9 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { UnknownPresetError } from '../../config/errors.js';
+import { looksExternal } from '../../config/presets.js';
 import { presetNames } from '../../config/presets/index.js';
+import type { Theme } from '../../reporters/theme.js';
 import type { CliDeps } from '../deps.js';
 import { ExitCode } from '../exit-codes.js';
+import { NO_COLOR_THEME } from '../style.js';
 
 export const DEFAULT_CONFIG_YAML = `version: 1
 
@@ -84,28 +87,48 @@ presets:
 `;
 }
 
-export function runInitCommand(opts: InitOptions, deps: CliDeps): ExitCode {
+export function runInitCommand(
+  opts: InitOptions,
+  deps: CliDeps,
+  theme: Theme = NO_COLOR_THEME,
+): ExitCode {
   let body = DEFAULT_CONFIG_YAML;
+  let externalNote: string | undefined;
   if (opts.preset !== undefined) {
     const available = presetNames();
-    if (!available.includes(opts.preset)) {
-      deps.stderr.write(`${new UnknownPresetError(opts.preset, available).message}\n`);
+    const isBuiltin = available.includes(opts.preset);
+    if (!isBuiltin && !looksExternal(opts.preset)) {
+      // bare unknown name → almost certainly a typo of a built-in
+      deps.stderr.write(`${theme.err(new UnknownPresetError(opts.preset, available).message)}\n`);
       return ExitCode.ConfigError;
     }
     body = presetConfigYaml(opts.preset, path.basename(deps.cwd) || 'my-service');
+    if (!isBuiltin) {
+      // external/path preset: scaffold it without requiring it to be installed yet
+      externalNote =
+        `${theme.warn(`Note: "${opts.preset}" is an external preset`)} — install it before checking:\n` +
+        `  ${theme.cyan(`npm i -D ${opts.preset}`)}\n` +
+        `${theme.hint('Only install presets you trust; preset packages run code when loaded.')}\n`;
+    }
   }
 
   const target = path.resolve(deps.cwd, opts.path ?? 'arch-contract.yaml');
   if (fs.existsSync(target) && opts.force !== true) {
-    deps.stderr.write(`Refusing to overwrite existing ${target}. Use --force.\n`);
+    deps.stderr.write(
+      `${theme.warn(`Refusing to overwrite existing ${target}`)}. ${theme.hint('Use --force.')}\n`,
+    );
     return ExitCode.Ok;
   }
   try {
     fs.writeFileSync(target, body, 'utf8');
   } catch (err) {
-    deps.stderr.write(`Could not write ${target}: ${(err as Error).message}\n`);
+    deps.stderr.write(`${theme.err(`Could not write ${target}`)}: ${(err as Error).message}\n`);
     return ExitCode.ConfigError;
   }
-  deps.stdout.write(`Created ${target}. Run \`arch-contract check\` to validate your architecture.\n`);
+  const ok = theme.enabled ? `${theme.symbolOk()} ` : '';
+  deps.stdout.write(
+    `${ok}Created ${theme.hint(target)}. Run ${theme.cyan('arch-contract check')} to validate your architecture.\n`,
+  );
+  if (externalNote !== undefined) deps.stdout.write(externalNote);
   return ExitCode.Ok;
 }

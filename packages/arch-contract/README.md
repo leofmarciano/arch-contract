@@ -94,6 +94,24 @@ arch-contract init --preset hexagonal  # scaffold a config using it
 
 Built-in presets: `clean-architecture`, `hexagonal`, `node-service`, `nestjs-clean`, `nest-js`, `nextjs`, `tanstack-starter`, `adonisjs`, `elysiajs`, `encore-ts`. Opinionated frameworks follow their own conventions; unopinionated ones get Clean Architecture. Your config merges on top (override layers/rules/expectations by `name`; `ruleset` replaces per layer). See the [preset docs](https://github.com/leofmarciano/arch-contract/tree/main/docs/presets).
 
+### External presets
+
+Reference a published package or a local file the same way you reference a built-in:
+
+```yaml
+presets:
+  - clean-architecture            # built-in (base)
+  - arch-contract-preset-acme     # npm package (npm i -D arch-contract-preset-acme)
+  - "@acme/arch-contract-preset-x" # scoped package
+  - ./arch/team-overrides.cjs     # local file, no publish needed
+```
+
+A name is treated as external when it is a scoped package (`@…`), a path (`./…`, `/…`),
+or contains `arch-contract-preset`; anything else stays a built-in (a bare typo still
+gets a "did you mean" hint). External presets resolve from your project's
+`node_modules` (relative to the config file). They run code when loaded — **only install
+presets you trust**. To author one, see [docs/presets/authoring.md](https://github.com/leofmarciano/arch-contract/blob/main/docs/presets/authoring.md).
+
 ## Baseline (legacy adoption)
 
 ```bash

@@ -27,6 +27,14 @@ A preset is a **partial config** merged **under** your config — **you always w
 
 So you can adopt a preset and then tighten/loosen individual rules by re-declaring them under the same `name`, or retarget a layer's globs.
 
+## External presets
+
+Besides the 10 built-ins you can activate a **published package** or a **local file**
+by name — `presets: [arch-contract-preset-acme]`, `["@acme/arch-contract-preset-x"]`, or
+`[./arch/house-rules.cjs]`. They resolve from your project's `node_modules` (relative to
+the config) and run code on load, so install only presets you trust. To author and publish
+one, see [authoring.md](./authoring.md).
+
 ## The 10 presets
 
 | Preset | Based on | Doc |

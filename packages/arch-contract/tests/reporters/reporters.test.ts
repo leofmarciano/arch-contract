@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { CheckResult } from '../../src/core/types.js';
+import { createTheme } from '../../src/cli/style.js';
 import { computeSummary } from '../../src/core/run-check.js';
 import {
   getReporter,
@@ -60,6 +61,16 @@ describe('table reporter', () => {
 
   it('renders an all-clear for an empty result', () => {
     expect(reporters.table.render(empty)).toBe('No architecture violations found.');
+  });
+
+  it('is byte-identical with a disabled theme, and colorized with an enabled one', () => {
+    // no theme === disabled theme === today's plain output
+    expect(reporters.table.render(sample(), createTheme(false))).toBe(reporters.table.render(sample()));
+    expect(reporters.table.render(empty, createTheme(false))).toBe('No architecture violations found.');
+    // enabled theme injects ANSI but keeps the key substrings
+    const colored = reporters.table.render(sample(), createTheme(true));
+    expect(colored).toContain('\x1b[');
+    expect(colored).toContain('Architecture violations found: 2');
   });
 });
 

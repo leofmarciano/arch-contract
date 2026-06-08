@@ -1,8 +1,10 @@
 import { loadAndValidate } from '../../config/index.js';
 import type { NormalizedConfig } from '../../config/model.js';
+import type { Theme } from '../../reporters/theme.js';
 import type { CliDeps } from '../deps.js';
 import { ExitCode } from '../exit-codes.js';
 import { mapError } from '../map-error.js';
+import { NO_COLOR_THEME } from '../style.js';
 
 /** Render the allowed layer-dependency graph (from ruleset) as a mermaid flowchart. */
 export function toMermaid(config: NormalizedConfig): string {
@@ -24,7 +26,11 @@ export interface GraphOptions {
   format?: string;
 }
 
-export function runGraphCommand(opts: GraphOptions, deps: CliDeps): ExitCode {
+export function runGraphCommand(
+  opts: GraphOptions,
+  deps: CliDeps,
+  theme: Theme = NO_COLOR_THEME,
+): ExitCode {
   let config;
   try {
     ({ config } = loadAndValidate({
@@ -32,13 +38,14 @@ export function runGraphCommand(opts: GraphOptions, deps: CliDeps): ExitCode {
       ...(opts.config !== undefined ? { explicitPath: opts.config } : {}),
     }));
   } catch (err) {
-    return mapError(err, deps);
+    return mapError(err, deps, theme);
   }
 
   const format = opts.format ?? 'mermaid';
   if (format === 'stub') {
-    deps.stdout.write(`Layers: ${config.layers.map((l) => l.name).join(', ')}\n`);
+    deps.stdout.write(`${theme.heading('Layers:')} ${config.layers.map((l) => l.name).join(', ')}\n`);
   } else {
+    // mermaid is machine/copy-paste output — leave it un-themed.
     deps.stdout.write(`${toMermaid(config)}\n`);
   }
   return ExitCode.Ok;

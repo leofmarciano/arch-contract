@@ -14,6 +14,8 @@ export function capture(cwd: string, now = new Date('2026-06-08T00:00:00.000Z'))
     stdout: { write: (s) => void (o += s) },
     stderr: { write: (s) => void (e += s) },
     now: () => now,
+    color: false,
+    width: 80,
   };
   return { deps, out: () => o, err: () => e };
 }

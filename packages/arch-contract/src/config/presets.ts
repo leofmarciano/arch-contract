@@ -8,6 +8,7 @@
  */
 import { UnknownPresetError } from './errors.js';
 import { PRESETS } from './presets/index.js';
+import { resolveExternalPreset } from './presets/resolve-external.js';
 
 type AnyRecord = Record<string, unknown>;
 type LayerLike = { name: string };
@@ -79,8 +80,28 @@ export function mergeFragment(base: AnyRecord, override: AnyRecord): AnyRecord {
   return out;
 }
 
-/** Resolve `presets`, merge fragments left-to-right, then the user's config on top; strip the key. */
-export function applyPresets(raw: unknown): unknown {
+/**
+ * Whether a preset name refers to an EXTERNAL preset (an npm package, a scoped
+ * package, or a local/relative/absolute path) rather than a built-in. A bare
+ * unknown identifier (e.g. a typo of a built-in) is intentionally NOT external —
+ * it keeps the `UnknownPresetError` "did you mean" hint.
+ */
+export function looksExternal(name: string): boolean {
+  return (
+    name.startsWith('@') ||
+    name.startsWith('.') ||
+    name.startsWith('/') ||
+    name.includes('arch-contract-preset')
+  );
+}
+
+/**
+ * Resolve `presets`, merge fragments left-to-right, then the user's config on top;
+ * strip the key. Built-ins take precedence (reserved); else an external-looking
+ * name is loaded from `baseDir` (the user's project dir); else it's a bare typo.
+ * `baseDir` defaults to cwd so existing one-arg callers/tests are unaffected.
+ */
+export function applyPresets(raw: unknown, baseDir: string = process.cwd()): unknown {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return raw;
   const obj = raw as AnyRecord;
   const names = normalizePresetNames(obj['presets']);
@@ -88,9 +109,15 @@ export function applyPresets(raw: unknown): unknown {
 
   let acc: AnyRecord = {};
   for (const name of names) {
-    const entry = PRESETS[name];
-    if (!entry) throw new UnknownPresetError(name, Object.keys(PRESETS));
-    acc = mergeFragment(acc, entry.fragment as AnyRecord);
+    let fragment: AnyRecord;
+    if (PRESETS[name]) {
+      fragment = PRESETS[name]!.fragment as AnyRecord;
+    } else if (looksExternal(name)) {
+      fragment = resolveExternalPreset(name, baseDir).fragment as AnyRecord;
+    } else {
+      throw new UnknownPresetError(name, Object.keys(PRESETS));
+    }
+    acc = mergeFragment(acc, fragment);
   }
 
   const { presets: _omit, ...userWithoutPresets } = obj;
