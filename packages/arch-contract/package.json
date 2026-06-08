@@ -1,6 +1,6 @@
 {
   "name": "arch-contract",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "ArchContract — architecture contract validator for TypeScript projects. Enforces layers, dependency boundaries, AST expectations and agent instructions in CI/CD — without acting as a linter.",
   "license": "MIT",
   "author": "leofmarciano",
