@@ -3,14 +3,18 @@ import type { DeclarationRecord, FileFacts, Violation } from '../../core/types.j
 import { createViolation } from '../violations.js';
 import { matchAnyName } from './name-match.js';
 
-function exportedClasses(facts: FileFacts): DeclarationRecord[] {
-  return facts.declarations.filter(
-    (d) => d.kind === 'class' && (d.isExported || d.isDefaultExport),
-  );
+/** A declaration is in scope if exported and (when `appliesTo` is set) of an allowed kind. */
+export function inScope(d: DeclarationRecord, exp: NormalizedExpectation): boolean {
+  if (!d.isExported && !d.isDefaultExport) return false;
+  return exp.appliesTo === undefined || exp.appliesTo.kind.includes(d.kind);
 }
 
-function exportedDecls(facts: FileFacts): DeclarationRecord[] {
-  return facts.declarations.filter((d) => d.isExported || d.isDefaultExport);
+function exportedClasses(facts: FileFacts, exp: NormalizedExpectation): DeclarationRecord[] {
+  return facts.declarations.filter((d) => d.kind === 'class' && inScope(d, exp));
+}
+
+function exportedDecls(facts: FileFacts, exp: NormalizedExpectation): DeclarationRecord[] {
+  return facts.declarations.filter((d) => inScope(d, exp));
 }
 
 function v(
@@ -38,7 +42,7 @@ export function evalClassClause(
     switch (clause.kind) {
       case 'be': {
         const allowed = new Set(clause.values);
-        for (const d of exportedDecls(facts)) {
+        for (const d of exportedDecls(facts, exp)) {
           if (!allowed.has(d.kind)) {
             out.push(
               v(exp, facts, {
@@ -53,7 +57,7 @@ export function evalClassClause(
         break;
       }
       case 'extend': {
-        for (const d of exportedClasses(facts)) {
+        for (const d of exportedClasses(facts, exp)) {
           if (d.extendsName === null || !matchAnyName(d.extendsName, clause.values)) {
             out.push(
               v(exp, facts, {
@@ -68,7 +72,7 @@ export function evalClassClause(
         break;
       }
       case 'implement': {
-        for (const d of exportedClasses(facts)) {
+        for (const d of exportedClasses(facts, exp)) {
           const ok = d.implementsNames.some((i) => matchAnyName(i, clause.values));
           if (!ok) {
             out.push(
@@ -84,7 +88,7 @@ export function evalClassClause(
         break;
       }
       case 'haveMethod': {
-        for (const d of exportedClasses(facts)) {
+        for (const d of exportedClasses(facts, exp)) {
           const methods = new Set(d.methods.map((m) => m.name));
           for (const required of clause.values) {
             if (!methods.has(required)) {
@@ -103,7 +107,7 @@ export function evalClassClause(
         break;
       }
       case 'haveDecorator': {
-        for (const d of exportedClasses(facts)) {
+        for (const d of exportedClasses(facts, exp)) {
           const decs = new Set(d.decorators.map((x) => x.name));
           for (const required of clause.values) {
             if (!decs.has(required)) {
@@ -122,7 +126,7 @@ export function evalClassClause(
         break;
       }
       case 'notHaveDecorator': {
-        for (const d of exportedClasses(facts)) {
+        for (const d of exportedClasses(facts, exp)) {
           for (const dec of d.decorators) {
             if (clause.values.includes(dec.name)) {
               out.push(

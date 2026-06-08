@@ -116,6 +116,20 @@ describe('adonisjs', () => {
     });
     expect(ruleNames(v)).toContain('controllers-must-not-query-models-directly');
   });
+
+  it('lets framework config files import the validated env (env leaf layer, not kernel)', () => {
+    // Regression for the real-scaffold finding: official config/app.ts & config/logger.ts
+    // `import env from '#start/env'`. start/env.ts used to fall into the `kernel` layer
+    // (start/**/*.ts) and config has mayDependOn:[] → a false positive on framework code.
+    // start/env.ts now has its own `env` leaf layer (matched before the kernel catch-all).
+    const v = runPreset('adonisjs', {
+      [at('config/app.ts')]: `import env from '../start/env';\nexport const appConfig = { name: env };`,
+      [at('config/logger.ts')]: `import env from '../start/env';\nexport const loggerConfig = { level: env };`,
+      [at('start/env.ts')]: `import { Env } from '@adonisjs/core/env';\nexport default { Env };`,
+    });
+    expect(ruleNames(v)).not.toContain('layer-boundary');
+    expect(errorsOf(v)).toEqual([]);
+  });
 });
 
 describe('encore-ts', () => {

@@ -1,8 +1,9 @@
 import type { Clause, NormalizedExpectation } from '../../config/model.js';
 import type { FileFacts, Violation } from '../../core/types.js';
 import { createViolation } from '../violations.js';
+import { inScope } from './class-expectations.js';
 
-/** `haveSuffix`: every exported declaration name must end with one of the suffixes. */
+/** `haveSuffix`: every exported (in-scope) declaration name must end with one of the suffixes. */
 export function evalNamingClause(
   exp: NormalizedExpectation,
   clause: Clause,
@@ -12,7 +13,7 @@ export function evalNamingClause(
   const out: Violation[] = [];
   for (const facts of files) {
     for (const d of facts.declarations) {
-      if (!d.isExported && !d.isDefaultExport) continue;
+      if (!inScope(d, exp)) continue;
       if (d.name === '') continue;
       if (!clause.values.some((suffix) => d.name.endsWith(suffix))) {
         out.push(

@@ -26,7 +26,9 @@ export const ELYSIAJS: PresetFragment = {
   ],
   ruleset: {
     main: { mayDependOn: ['presentation', 'application', 'infrastructure', 'shared'] },
-    presentation: { mayDependOn: ['application', 'domain', 'shared'] },
+    // the per-feature module index.ts is the composition root (Elysia has no DI
+    // container), so presentation may wire a concrete repository into a use-case.
+    presentation: { mayDependOn: ['application', 'domain', 'infrastructure', 'shared'] },
     application: { mayDependOn: ['domain', 'shared'] },
     domain: { mayDependOn: [] },
     infrastructure: { mayDependOn: ['domain', 'application', 'shared'] },

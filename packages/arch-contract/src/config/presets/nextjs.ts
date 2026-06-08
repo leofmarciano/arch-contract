@@ -41,20 +41,23 @@ export const NEXTJS: PresetFragment = {
     { name: 'application', match: ['src/application/**/*.{ts,tsx}', 'src/use-cases/**/*.{ts,tsx}'] },
     { name: 'domain', match: ['src/domain/**/*.{ts,tsx}', 'src/core/**/*.{ts,tsx}'] },
     { name: 'infrastructure', match: INFRA_PATHS.map((p) => `${p}/*.{ts,tsx}`).concat(INFRA_PATHS) },
+    // composition root: the DI container that wires concrete infra into use-cases
+    { name: 'composition', match: ['src/composition/**/*.{ts,tsx}', 'src/lib/container.{ts,tsx}', 'src/lib/di/**/*.{ts,tsx}'] },
     { name: 'shared', match: ['src/lib/**/*.{ts,tsx}', 'src/utils/**/*.{ts,tsx}', 'src/types/**/*.{ts,tsx}'] },
   ],
   ruleset: {
     'presentation-routing': {
-      mayDependOn: ['presentation-components', 'server-action', 'application', 'domain', 'shared'],
+      mayDependOn: ['presentation-components', 'server-action', 'application', 'domain', 'composition', 'shared'],
     },
-    'route-handler': { mayDependOn: ['application', 'domain', 'shared'] },
-    'server-action': { mayDependOn: ['application', 'domain', 'shared'] },
+    'route-handler': { mayDependOn: ['application', 'domain', 'composition', 'shared'] },
+    'server-action': { mayDependOn: ['application', 'domain', 'composition', 'shared'] },
     'presentation-components': {
       mayDependOn: ['presentation-components', 'server-action', 'domain', 'shared'],
     },
     application: { mayDependOn: ['domain', 'shared'] },
     domain: { mayDependOn: [] },
     infrastructure: { mayDependOn: ['domain', 'application', 'shared'] },
+    composition: { mayDependOn: ['application', 'domain', 'infrastructure', 'shared'] },
     shared: { mayDependOn: [] },
   },
   rules: [{ name: 'no-file-cycles', type: 'no-cycles', scope: 'file', severity: 'error' }],

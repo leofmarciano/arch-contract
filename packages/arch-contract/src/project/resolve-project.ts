@@ -1,4 +1,7 @@
-import type { Project } from 'ts-morph';
+import fs from 'node:fs';
+import path from 'node:path';
+
+import { type Project, type ts } from 'ts-morph';
 
 import type { NormalizedConfig, NormalizedLayer } from '../config/model.js';
 import type { AnalysisContext, FileFacts } from '../core/types.js';
@@ -55,16 +58,60 @@ export function buildAnalysisContext(project: Project, config: NormalizedConfig)
   };
 }
 
+function autoDetectTsconfig(rootDir: string): string | null {
+  const candidate = path.join(rootDir, 'tsconfig.json');
+  return fs.existsSync(candidate) ? candidate : null;
+}
+
+/**
+ * AdonisJS (and other Node packages) resolve intra-project imports via the
+ * package.json `imports` map (`#models/*` -> `./app/models/*.js`). ts-morph
+ * doesn't read it, so convert it into tsconfig-style `paths` (extension-stripped)
+ * to make those imports resolve and the import rules actually fire.
+ */
+function readPackageImports(rootDir: string): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  let raw: unknown;
+  try {
+    raw = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
+  } catch {
+    return out;
+  }
+  const imports = (raw as { imports?: unknown }).imports;
+  if (imports === null || typeof imports !== 'object') return out;
+  for (const [key, value] of Object.entries(imports as Record<string, unknown>)) {
+    let target: unknown = value;
+    if (value !== null && typeof value === 'object') {
+      const o = value as Record<string, unknown>;
+      target = o['import'] ?? o['default'] ?? o['types'] ?? Object.values(o)[0];
+    }
+    if (typeof target !== 'string') continue;
+    out[key] = [target.replace(/\.(m|c)?[jt]sx?$/i, '')];
+  }
+  return out;
+}
+
 /** Real-run entry: create a Project from config (tsconfig-aware), add disk files, analyze. */
 export function analyzeProject(config: NormalizedConfig): AnalysisContext {
-  let compilerOptions = {};
-  if (config.project.tsconfig !== null) {
+  let compilerOptions: ts.CompilerOptions = {};
+  const tsconfigPath = config.project.tsconfig ?? autoDetectTsconfig(config.rootDir);
+  if (tsconfigPath !== null) {
     try {
-      compilerOptions = resolveTsConfig(config.project.tsconfig).compilerOptions;
+      compilerOptions = resolveTsConfig(tsconfigPath).compilerOptions;
     } catch {
       compilerOptions = {};
     }
   }
+
+  const pkgPaths = readPackageImports(config.rootDir);
+  if (Object.keys(pkgPaths).length > 0) {
+    compilerOptions = {
+      ...compilerOptions,
+      baseUrl: compilerOptions.baseUrl ?? config.rootDir,
+      paths: { ...(compilerOptions.paths ?? {}), ...pkgPaths },
+    };
+  }
+
   const project = createProject({ compilerOptions });
   const files = discoverFilesOnDisk(config.rootDir, config.paths.include, config.paths.exclude);
   for (const f of files) {

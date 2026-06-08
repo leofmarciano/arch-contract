@@ -103,18 +103,23 @@ export function makeCleanArchBase(o: CleanArchOptions): PresetFragment {
 
 const DEFAULT_IGNORING = ['**/index.ts', '**/*.spec.ts', '**/*.test.ts'];
 
-/** Use-cases are single-responsibility classes named `*UseCase` exposing `execute()`. */
+/**
+ * Use-cases are single-responsibility classes named `*UseCase` exposing
+ * `execute()`. `appliesTo: class` scopes the checks to the class only, so a
+ * co-located input/command DTO interface in the same file is ignored.
+ */
 export function useCaseExpectation(match: string | string[]): RawExpectation {
   return {
     name: 'use-cases-are-classes-with-execute',
     expect: { path: match },
-    to: { be: ['class'], haveSuffix: ['UseCase'], haveMethod: ['execute'] },
+    appliesTo: { kind: ['class'] },
+    to: { haveSuffix: ['UseCase'], haveMethod: ['execute'] },
     ignoring: DEFAULT_IGNORING,
     severity: 'error',
   };
 }
 
-/** Ports are interfaces; concrete repositories implement a `*RepositoryPort`/`*Repository`. */
+/** Ports are interfaces; concrete repositories (classes) implement a `*RepositoryPort`/`*Repository`. */
 export function repositoryPortExpectations(
   portMatch: string | string[],
   repoMatch: string | string[],
@@ -130,7 +135,8 @@ export function repositoryPortExpectations(
     {
       name: 'concrete-repositories-implement-a-port',
       expect: { path: repoMatch },
-      to: { be: ['class'], implement: ['*RepositoryPort', '*Repository', '*Port'] },
+      appliesTo: { kind: ['class'] },
+      to: { implement: ['*RepositoryPort', '*Repository', '*Port'] },
       ignoring: DEFAULT_IGNORING,
       severity: 'error',
     },

@@ -9,12 +9,26 @@ const ENCORE_CLIENTS = ['~encore/clients', '~encore/*'];
 export const ENCORE_TS: PresetFragment = {
   paths: {
     include: ['**/*.ts'],
-    exclude: ['**/*.spec.ts', '**/*.test.ts', '**/*.d.ts', 'node_modules/**', 'dist/**', '**/migrations/**'],
+    // Encore regenerates encore.gen/** (and ~encore/*) — codegen that MUST deep-import
+    // every service by design, so it is excluded from analysis.
+    exclude: [
+      '**/*.spec.ts',
+      '**/*.test.ts',
+      '**/*.d.ts',
+      'node_modules/**',
+      'dist/**',
+      '**/migrations/**',
+      'encore.gen/**',
+      '**/encore.gen/**',
+      '**/*.gen.ts',
+    ],
   },
   modules: { pattern: '*', publicApi: 'encore.service.ts' },
+  // Order matters (first-match-wins): the specific kinds are matched first, then
+  // `api` is the catch-all for the remaining service-root files (the idiomatic
+  // endpoint file is `<service>/<service>.ts`, e.g. users/users.ts).
   layers: [
     { name: 'service-definition', match: ['**/encore.service.ts'] },
-    { name: 'api', match: ['**/*.api.ts', '**/api.ts', '**/api/**/*.ts', '**/endpoints/**/*.ts', '**/*.endpoints.ts'] },
     {
       name: 'infrastructure',
       match: [
@@ -46,6 +60,10 @@ export const ENCORE_TS: PresetFragment = {
       ],
     },
     { name: 'shared', match: ['shared/**/*.ts', 'lib/**/*.ts', 'common/**/*.ts', 'internal/**/*.ts'] },
+    {
+      name: 'api',
+      match: ['**/*.api.ts', '**/api.ts', '**/api/**/*.ts', '**/endpoints/**/*.ts', '**/*.endpoints.ts', '**/*.ts'],
+    },
   ],
   ruleset: {
     'service-definition': { mayDependOn: ['domain', 'infrastructure', 'shared'] },

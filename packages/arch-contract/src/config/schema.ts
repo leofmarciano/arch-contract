@@ -158,6 +158,7 @@ const expectationSchema = z
   .object({
     name: z.string().min(1),
     expect: expectSchema,
+    appliesTo: z.object({ kind: z.array(beKind).min(1) }).strict().optional(),
     to: toSchema,
     ignoring: stringOrArray.optional(),
     severity: severity.optional(),
