@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      arch-contract:
+        specifier: workspace:*
+        version: link:packages/arch-contract
 
   packages/arch-contract:
     dependencies:

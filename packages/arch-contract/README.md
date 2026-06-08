@@ -94,6 +94,8 @@ arch-contract init --preset hexagonal  # scaffold a config using it
 
 Built-in presets: `clean-architecture`, `hexagonal`, `node-service`, `nestjs-clean`, `nest-js`, `nextjs`, `tanstack-starter`, `adonisjs`, `elysiajs`, `encore-ts`. Opinionated frameworks follow their own conventions; unopinionated ones get Clean Architecture. Your config merges on top (override layers/rules/expectations by `name`; `ruleset` replaces per layer). See the [preset docs](https://github.com/leofmarciano/arch-contract/tree/main/docs/presets).
 
+> ⭐ **`encore-ts` — AAA Quality.** Our most battle-tested preset: service-per-directory boundaries (`encore.service.ts`), cross-service calls only through `~encore/clients`, thin `api()` handlers, and infrastructure declared in its owning service. Validated against real Encore.ts scaffolds. See [encore-ts.md](https://github.com/leofmarciano/arch-contract/blob/main/docs/presets/encore-ts.md).
+
 ### External presets
 
 Reference a published package or a local file the same way you reference a built-in:
