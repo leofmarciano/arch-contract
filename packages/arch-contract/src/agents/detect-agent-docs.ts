@@ -43,17 +43,24 @@ function listMarkdown(rootDir: string): string[] {
 }
 
 /**
- * Resolve the markdown files to sync. Literal filenames in `updateDocs` are
- * always targeted (created if missing); glob patterns match existing files.
- * Result is absolute POSIX, de-duplicated, deterministic.
+ * Resolve a set of doc paths/globs to absolute files. Literal filenames are
+ * always targeted (created if missing) unless `onlyExisting` is set; glob
+ * patterns match existing files. Result is absolute POSIX, de-duplicated,
+ * deterministic.
  */
-export function resolveAgentDocTargets(rootDir: string, agent: NormalizedAgent): string[] {
+export function resolveDocTargets(
+  rootDir: string,
+  docs: string[],
+  opts: { onlyExisting?: boolean } = {},
+): string[] {
   const targets = new Set<string>();
-  const literals = agent.updateDocs.filter((p) => !hasGlob(p));
-  const globs = agent.updateDocs.filter(hasGlob);
+  const literals = docs.filter((p) => !hasGlob(p));
+  const globs = docs.filter(hasGlob);
 
   for (const lit of literals) {
-    targets.add(toPosix(path.resolve(rootDir, lit)));
+    const abs = toPosix(path.resolve(rootDir, lit));
+    if (opts.onlyExisting === true && !fs.existsSync(abs)) continue;
+    targets.add(abs);
   }
 
   if (globs.length > 0) {
@@ -64,4 +71,9 @@ export function resolveAgentDocTargets(rootDir: string, agent: NormalizedAgent):
   }
 
   return [...targets].sort();
+}
+
+/** Resolve the agent's configured `updateDocs` to absolute target files. */
+export function resolveAgentDocTargets(rootDir: string, agent: NormalizedAgent): string[] {
+  return resolveDocTargets(rootDir, agent.updateDocs);
 }

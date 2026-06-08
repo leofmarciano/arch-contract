@@ -99,6 +99,20 @@ export const COMMANDS: CommandMeta[] = [
     examples: ['arch-contract sync-agent-docs', 'arch-contract sync-agent-docs --check'],
   },
   {
+    name: 'sync-agent-rules',
+    summary: 'Generate/update an architecture-rules guide in agent docs',
+    options: [
+      CONFIG_OPTION,
+      { flag: '--check', summary: 'Report drift without writing' },
+      { flag: '--only-existing', summary: 'Only update docs that already exist (never create)' },
+    ],
+    examples: [
+      'arch-contract sync-agent-rules',
+      'arch-contract sync-agent-rules --check',
+      'arch-contract sync-agent-rules --only-existing',
+    ],
+  },
+  {
     name: 'agent-instructions',
     summary: 'Print the raw agent instructions',
     options: [CONFIG_OPTION],
